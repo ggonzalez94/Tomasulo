@@ -9,7 +9,7 @@
 
 
 class Instruction {
-    public:
+    private:
         int rd; // rd <- rs + rt
         int rs;
         int rt;

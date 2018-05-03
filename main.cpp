@@ -190,7 +190,7 @@ int ISSUE(vector<Instruction>& INST,
     // for rest of program
     if(currentInst_ISSUE >= INST.size())
             return 0;
-    r = INST[currentInst_ISSUE].op;
+    r = INST[currentInst_ISSUE].get_operation();
     // determine if there is an open RS of r type. if yes
     // -> r = that open spot.
     // Boundry's of given RS
@@ -205,10 +205,10 @@ int ISSUE(vector<Instruction>& INST,
     switch(r){
         case AddOp:
             for(int i=RSAddStart;i<RSAddEnd;i++){
-                if(!RESSTATION[i].busy){
+                if(!RESSTATION[i].is_busy()){
                     r = i;
                     currentInst_ISSUE++;
-                    RESSTATION[i].op = AddOp;
+                    RESSTATION[i].set_operation(AddOp);
                     rsFree = true;
                     break;
                 }
@@ -221,10 +221,10 @@ int ISSUE(vector<Instruction>& INST,
             break;
         case SubOp:
             for(int i=RSSubStart;i<RSSubEnd;i++){
-                if(!RESSTATION[i].busy){
+                if(!RESSTATION[i].is_busy()){
                     r = i;
                     currentInst_ISSUE++;
-                    RESSTATION[i].op = SubOp;
+                    RESSTATION[i].set_operation(SubOp);
                     rsFree = true;
                     break;
                 }
@@ -234,10 +234,10 @@ int ISSUE(vector<Instruction>& INST,
             break;
         case MultOp:
             for(int i=RSMulStart;i<RSMulEnd;i++){
-                if(!RESSTATION[i].busy){
+                if(!RESSTATION[i].is_busy()){
                     r = i;
                     currentInst_ISSUE++;
-                    RESSTATION[i].op = MultOp;
+                    RESSTATION[i].set_operation(MultOp);
                     rsFree = true;
                     break;
                 }
@@ -247,10 +247,10 @@ int ISSUE(vector<Instruction>& INST,
             break;
         case DivOp:
             for(int i=RSDivStart;i<RSDivEnd;i++){
-                if(!RESSTATION[i].busy){
+                if(!RESSTATION[i].is_busy()){
                     r = i;
                     currentInst_ISSUE++;
-                    RESSTATION[i].op = DivOp;
+                    RESSTATION[i].set_operation(DivOp);
                     rsFree = true;
                     break;
                 }
@@ -269,35 +269,35 @@ int ISSUE(vector<Instruction>& INST,
     // NOTE: since currentInst was in incremented we must
     // do currentINST_ISSUE-1
     if(REGSTATUS[INST[currentInst_ISSUE-1].get_rs_register()].get_estacion() == RegStatusEmpty){
-        RESSTATION[r].Vj = REG[INST[currentInst_ISSUE-1].get_rs_register()];
-        RESSTATION[r].Qj = OperandAvailable;
+        RESSTATION[r].set_Vj(REG[INST[currentInst_ISSUE-1].get_rs_register()]);
+        RESSTATION[r].set_estacion_Qj(OperandAvailable);
     }
     else{
-        RESSTATION[r].Qj = REGSTATUS[INST[currentInst_ISSUE-1].rs].get_estacion();
+        RESSTATION[r].set_estacion_Qj(REGSTATUS[INST[currentInst_ISSUE-1].get_rs_register()].get_estacion());
     }
     // if operand rt is available -> set value of
     // operand (Vk) to given register value
     // else point operand to the reservation station
     // (Qk) that will give the operand value
-    if(REGSTATUS[INST[currentInst_ISSUE-1].rt].get_estacion() == RegStatusEmpty){
-        RESSTATION[r].Vk = REG[INST[currentInst_ISSUE-1].rt];
-        RESSTATION[r].Qk = OperandAvailable;
+    if(REGSTATUS[INST[currentInst_ISSUE-1].get_rt_register()].get_estacion() == RegStatusEmpty){
+        RESSTATION[r].set_Vk(REG[INST[currentInst_ISSUE-1].get_rt_register()]);
+        RESSTATION[r].set_estacion_Qk(OperandAvailable);
     }
     else{
-        RESSTATION[r].Qk = REGSTATUS[INST[currentInst_ISSUE-1].rt].get_estacion();
+        RESSTATION[r].set_estacion_Qk(REGSTATUS[INST[currentInst_ISSUE-1].get_rt_register()].get_estacion());
     }
     // given reservation station is now busy
     // until write back stage is completed.
-    RESSTATION[r].busy = true;
-    RESSTATION[r].ISSUE_Lat = 0;
+    RESSTATION[r].set_busy();
+    RESSTATION[r].set_issue_latency(0);
     // set reservation station instuction
     // number == current instruction
-    RESSTATION[r].instNum = currentInst_ISSUE-1;
+    RESSTATION[r].set_instruction_number(currentInst_ISSUE-1);
     // set clock cycle for issue time
-    INST[currentInst_ISSUE-1].issueClock = Clock;
+    INST[currentInst_ISSUE-1].set_issue_clock(Clock);
     // The register status Qi is set to the current
     // instructions reservation station location r
-    REGSTATUS[INST[currentInst_ISSUE-1].rd].set_estacion(r) = r;
+    REGSTATUS[INST[currentInst_ISSUE-1].get_destination_register()].set_estacion(r);
     return 2;
 }//END ISSUE()
 void EXECUTE(vector<Instruction>& INST,
@@ -313,15 +313,15 @@ void EXECUTE(vector<Instruction>& INST,
         // and set resultReady flag to true so that
         // result can be written back to CDB
         // first check if instruction has been issued
-        if(RESSTATION[r].busy == true){
+        if(RESSTATION[r].is_busy() == true){
             // second check if the ISSUE latency clock cycle has happened
-            if(RESSTATION[r].ISSUE_Lat >= ISSUE_Lat){
+            if(RESSTATION[r].get_issue_latency() >= ISSUE_Lat){
                 // third check if both operands are available
-                if(RESSTATION[r].Qj == OperandAvailable &&
-                        RESSTATION[r].Qk == OperandAvailable){
+                if(RESSTATION[r].get_estacion_Qj() == OperandAvailable &&
+                        RESSTATION[r].get_estacion_Qk() == OperandAvailable){
                     // Set clock cycle when execution begins
-                    if(INST[RESSTATION[r].instNum].executeClockBegin == 0)
-                        INST[RESSTATION[r].instNum].executeClockBegin = Clock;
+                    if(INST[RESSTATION[r].get_instruction_number()].get_execeute_clock_begin() == 0)
+                        INST[RESSTATION[r].get_instruction_number()].set_execute_clock_begin(Clock);
                     // when execution starts we must wait the given
                     // latency number of clock cycles before making result
                     // available to WriteBack
@@ -329,48 +329,48 @@ void EXECUTE(vector<Instruction>& INST,
                     //		case(add): 	clock += 4;
                     //		case(mult): 	clock += 12;
                     //		case(div):	clock += 38;
-                    RESSTATION[r].lat++;
-                    switch(RESSTATION[r].op){
+                    RESSTATION[r].increase_latency();
+                    switch(RESSTATION[r].get_operation()){
                         case(AddOp):
-                            if(RESSTATION[r].lat == ADD_Lat){
-                                RESSTATION[r].result = RESSTATION[r].Vj + RESSTATION[r].Vk;
+                            if(RESSTATION[r].get_lat() == ADD_Lat){
+                                RESSTATION[r].set_result(RESSTATION[r].get_Vj() + RESSTATION[r].get_Vk());
                                 // Result is ready to be writenback
-                                RESSTATION[r].resultReady = true;
-                                RESSTATION[r].lat = 0;
+                                RESSTATION[r].set_result_ready(true);
+                                RESSTATION[r].set_lat(0);
                                 // Set clock cycle when execution ends
-                                INST[RESSTATION[r].instNum].executeClockEnd = Clock;
+                                INST[RESSTATION[r].get_instruction_number()].set_execute_clock_end(Clock);
                                 // reset ISSUE latency for RS
-                                RESSTATION[r].ISSUE_Lat = 0;
+                                RESSTATION[r].set_issue_latency(0);
                             }
                         case(SubOp):
-                            if(RESSTATION[r].lat == ADD_Lat){
-                                RESSTATION[r].result = RESSTATION[r].Vj - RESSTATION[r].Vk;
-                                RESSTATION[r].resultReady = true;
-                                RESSTATION[r].lat = 0;
+                            if(RESSTATION[r].get_lat() == ADD_Lat){
+                                RESSTATION[r].set_result(RESSTATION[r].get_Vj() - RESSTATION[r].get_Vk());
+                                RESSTATION[r].set_result_ready(true);
+                                RESSTATION[r].set_lat(0);
                                 // Set clock cycle when execution ends
-                                INST[RESSTATION[r].instNum].executeClockEnd = Clock;
+                                INST[RESSTATION[r].get_instruction_number()].set_execute_clock_end(Clock);
                                 // reset ISSUE latency for RS
-                                RESSTATION[r].ISSUE_Lat = 0;
+                                RESSTATION[r].set_issue_latency(0);
                             }
                         case(MultOp):
-                            if(RESSTATION[r].lat == MULT_Lat){
-                                RESSTATION[r].result = RESSTATION[r].Vj * RESSTATION[r].Vk;
-                                RESSTATION[r].resultReady = true;
-                                RESSTATION[r].lat = 0;
+                            if(RESSTATION[r].get_lat() == MULT_Lat){
+                                RESSTATION[r].set_result(RESSTATION[r].get_Vj() * RESSTATION[r].get_Vk());
+                                RESSTATION[r].set_result_ready(true);
+                                RESSTATION[r].set_lat(0);
                                 // Set clock cycle when execution ends
-                                INST[RESSTATION[r].instNum].executeClockEnd = Clock;
+                                INST[RESSTATION[r].get_instruction_number()].set_execute_clock_end(Clock);
                                 // reset ISSUE latency for RS
-                                RESSTATION[r].ISSUE_Lat = 0;
+                                RESSTATION[r].set_issue_latency(0);
                             }
                         case(DivOp):
-                            if(RESSTATION[r].lat == DIV_Lat){
-                                RESSTATION[r].result = RESSTATION[r].Vj / RESSTATION[r].Vk;
-                                RESSTATION[r].resultReady = true;
-                                RESSTATION[r].lat = 0;
+                            if(RESSTATION[r].get_lat() == DIV_Lat){
+                                RESSTATION[r].set_result(RESSTATION[r].get_Vj() / RESSTATION[r].get_Vk());
+                                RESSTATION[r].set_result_ready(true);
+                                RESSTATION[r].set_lat(0);
                                 // Set clock cycle when execution ends
-                                INST[RESSTATION[r].instNum].executeClockEnd = Clock;
+                                INST[RESSTATION[r].get_instruction_number()].set_execute_clock_end(Clock);
                                 // reset ISSUE latency for RS
-                                RESSTATION[r].ISSUE_Lat = 0;
+                                RESSTATION[r].set_issue_latency(0);
                             }
                         default:
                             break;
@@ -378,7 +378,7 @@ void EXECUTE(vector<Instruction>& INST,
                 }
             }
             else // Execute is not ready until one cycle latency of ISSUE
-                RESSTATION[r].ISSUE_Lat++;
+                RESSTATION[r].increase_issue_latency();
         }
 
     }
@@ -393,14 +393,14 @@ void WRITEBACK(vector<Instruction>& INST,
     for(int r=0;r<RESSTATION.size();r++){
         // if result ready write back to CDB
         // -> Register,and reservation stations
-        if(RESSTATION[r].resultReady){
+        if(RESSTATION[r].is_result_ready()){
             // Before Writeback is available there
             // must be a 1 cycle WB delay
-            if(RESSTATION[r].WRITEBACK_Lat == WRITEBACK_Lat){
+            if(RESSTATION[r].get_writeback_latency() == WRITEBACK_Lat){
                 // set clock cycle when write back occured.
                 // (Must add one because increment happens after loop)
-                if(INST[RESSTATION[r].instNum].writebackClock == 0)
-                    INST[RESSTATION[r].instNum].writebackClock = Clock;
+                if(INST[RESSTATION[r].get_instruction_number()].get_writeback_clock() == 0)
+                    INST[RESSTATION[r].get_instruction_number()].set_writeback_clock(Clock);
                 // Check if any registers (via the registerStatus)
                 // are waiting for current r result
                 for(int x=0;x<REG.size();x++) {
@@ -409,7 +409,7 @@ void WRITEBACK(vector<Instruction>& INST,
                     // equal to executed result
                     if (REGSTATUS[x].get_estacion() == r) {
                         // Write back to Registers
-                        REG[x] = RESSTATION[r].result;
+                        REG[x] = RESSTATION[r].get_result();
                         REGSTATUS[x].set_estacion(RegStatusEmpty);
                     }
                 }
@@ -421,29 +421,29 @@ void WRITEBACK(vector<Instruction>& INST,
                     // Write back to reservation stations
                     // Given RS is not longer waiting for this
                     // operand value
-                    if(RESSTATION[y].Qj==r){
-                        RESSTATION[y].Vj=RESSTATION[r].result;
-                        RESSTATION[y].Qj=OperandAvailable;
+                    if(RESSTATION[y].get_estacion_Qj()==r){
+                        RESSTATION[y].set_Vj(RESSTATION[r].get_result());
+                        RESSTATION[y].set_estacion_Qj(OperandAvailable);
                     }
-                    if(RESSTATION[y].Qk==r){
-                        RESSTATION[y].Vk=RESSTATION[r].result;
-                        RESSTATION[y].Qk=OperandAvailable;
+                    if(RESSTATION[y].get_estacion_Qk()==r){
+                        RESSTATION[y].set_Vk(RESSTATION[r].get_result());
+                        RESSTATION[y].set_estacion_Qk(OperandAvailable);
                     }
                 }
                 // The given reservation station can
                 // now be used again
                 // Reset RS paramaters
-                RESSTATION[r].resultReady = false;
-                RESSTATION[r].busy = false;
-                RESSTATION[r].Qj = OperandInit;
-                RESSTATION[r].Qk = OperandInit;
-                RESSTATION[r].Vj = 0;
-                RESSTATION[r].Vk = 0;
-                RESSTATION[r].WRITEBACK_Lat = 0;
+                RESSTATION[r].set_result_ready(false);
+                RESSTATION[r].set_free();
+                RESSTATION[r].set_estacion_Qj(OperandInit);
+                RESSTATION[r].set_estacion_Qk(OperandInit);
+                RESSTATION[r].set_Vj(0);
+                RESSTATION[r].set_Vk(0);
+                RESSTATION[r].set_writeback_latency(0);
                 Total_WRITEBACKS++;
             }
             else
-                RESSTATION[r].WRITEBACK_Lat++;
+                RESSTATION[r].increase_writeback_latency();
         }
     }
 
@@ -460,10 +460,10 @@ void printRegisterStatus(vector<RegisterStatus> RegisterStatusVector){
 }
 void printReservationStations(vector<ReservationStation> RSV){
     for(int i=0; i<RSV.size(); i++)
-        cout << "RS #: " << i << "  Busy: " << RSV[i].busy << "  op: "<<
-                RSV[i].op << "  Vj: " << RSV[i].Vj << "  Vk: " <<
-                RSV[i].Vk << "  Qj: " << RSV[i].Qj << "  Qk: " <<
-                RSV[i].Qk << endl;
+        cout << "RS #: " << i << "  Busy: " << RSV[i].is_busy() << "  op: "<<
+                RSV[i].get_operation() << "  Vj: " << RSV[i].get_Vj() << "  Vk: " <<
+                RSV[i].get_Vk() << "  Qj: " << RSV[i].get_estacion_Qj() << "  Qk: " <<
+                RSV[i].get_estacion_Qk() << endl;
 }
 void printRegisters(vector<int> RegistersVector){
     cout << "Register Content:" << endl;
@@ -474,9 +474,9 @@ void printRegisters(vector<int> RegistersVector){
 void printInstructions(vector<Instruction> IV){
     for(int i=0; i<IV.size(); i++)
         cout << "Instruction #: " << i << "  Operation: " <<
-                IV[i].op << "  " <<
-                IV[i].rd << " <- " << IV[i].rs << " op " <<
-                IV[i].rt << endl;
+                IV[i].get_operation() << "  " <<
+                IV[i].get_destination_register() << " <- " << IV[i].get_rs_register() << " op " <<
+                IV[i].get_rt_register() << endl;
 }
 void printTimingTable(vector<Instruction> INST){
     char separator    = ' ';
@@ -498,10 +498,10 @@ void printTimingTable(vector<Instruction> INST){
     // Define Row Labels and values
     for(int i=0;i<INST.size();i++){
         cout << left  << setw(width) << setfill(separator) << i;
-        cout << left << setw(width) << setfill(separator) << INST[i].issueClock;
-        cout << INST[i].executeClockBegin <<  "-";
-        cout << left << setw(width) << setfill(separator)  << INST[i].executeClockEnd;
-        cout << left << setw(width) << setfill(separator) << INST[i].writebackClock;
+        cout << left << setw(width) << setfill(separator) << INST[i].get_issue_clock();
+        cout << INST[i].get_execeute_clock_begin() <<  "-";
+        cout << left << setw(width) << setfill(separator)  << INST[i].get_execute_clock_end();
+        cout << left << setw(width) << setfill(separator) << INST[i].get_writeback_clock();
         cout << endl;
     }
 
