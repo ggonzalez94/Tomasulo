@@ -1,0 +1,7 @@
+1 2 3 AddOp
+4 1 5 AddOp
+6 7 8 SubOp
+9 4 10 MultOp
+11 12 6 DivOp
+8 1 5 MultOp
+7 2 3 MultOp

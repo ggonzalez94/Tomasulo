@@ -19,6 +19,7 @@
 #include <iostream>
 #include <iomanip>          // Print Table Formatting
 #include <vector>
+#include <fstream>
 #include "ReservationStation.h"
 #include "Instruction.h"    // MIPS Style Instruction Class
 #include "RegisterStatus.h"
@@ -75,25 +76,38 @@ void printReservationStations(vector<ReservationStation> );
 void printRegisters(vector<int> );
 void printInstructions(vector<Instruction> );
 void printTimingTable(vector<Instruction> );
+operaciones convert(const std::string& str);
 //#######################################################################
 
 //#######################################################################
 // MAIN DRIVER
-int main(){
+int main(int argc, char* argv[]){
+    if (argc < 2){
+      cout<<"Se debe proveer el nombre del archivo con las instrucciones \n";
+      exit(1);
+    }
     //**** START Define Architecture
-    // Input program instructions
-    Instruction
-            //(rd,rs,rt,opcode)
-            I0(1,2,3,AddOp),
-            I1(4,1,5,AddOp),
-            I2(6,7,8,SubOp),
-            I3(9,4,10,MultOp),
-            I4(11,12,6,DivOp),
-            I5(8,1,5,MultOp),
-            I6(7,2,3,MultOp);
-    // Pack Instructions into vector
-    vector<Instruction> Inst = {I0,I1,I2,I3,I4,I5,I6};
 
+    //Read instruction file and put it into a vector
+    vector<Instruction> Inst;
+    ifstream fp;
+    fp.open(argv[1]);
+    //Check if the file exists
+    if (!fp){
+      cout<<"Nombre del archivo de instrucciones no valido \n";
+      exit(1);
+    }
+    int reg_dest;
+    int reg_first_source;
+    int reg_second_source;
+    string operation;
+    int i = 0;
+    while(fp >> reg_dest >> reg_first_source >> reg_second_source >> operation){
+      Instruction instruccion(reg_dest,reg_first_source,reg_second_source,convert(operation));
+      Inst.push_back(instruccion);
+      cout<<Inst[i].get_destination_register()<<"\n";
+      i++;
+    }
     //// Input reservation station architecture
     // DONT FORGET TO UPDATE ^
     // RESERVATION STATION NUMBERS
@@ -505,5 +519,14 @@ void printTimingTable(vector<Instruction> INST){
         cout << endl;
     }
 
+}
+
+operaciones convert(const std::string& str)
+{
+    if(str == "AddOp") return AddOp;
+    else if(str == "SubOp") return SubOp;
+    else if(str == "MultOp") return MultOp;
+    else if(str == "DivOp") return DivOp;
+    else return AddOp;
 }
 //#######################################################################
