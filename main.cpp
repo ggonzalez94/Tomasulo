@@ -24,6 +24,7 @@
 #include "Instruction.h"    // MIPS Style Instruction Class
 #include "RegisterStatus.h"
 #include "operaciones.h"
+#include "Memory.h"
 
 using namespace std;
 
@@ -33,10 +34,14 @@ using namespace std;
 const int Num_ADD_RS = 4;
 const int Num_MULT_RS = 2;
 const int Num_DIV_RS = 3;
+const int Num_LD_RS = 2;
+const int Num_SD_RS = 2;
 // RESERVATION STATION LATENCY
 const int ADD_Lat = 4;
 const int MULT_Lat = 12;
 const int DIV_Lat = 38;
+const int LD_Lat = 8;
+const int SD_Lat = 8;
 // Datapath Latency
 const int ISSUE_Lat = 1;
 const int WRITEBACK_Lat = 1;
@@ -153,6 +158,9 @@ int main(int argc, char* argv[]){
 
     // Initialize register file vector
     vector<int> Register = {ZERO_REG,1,2,3,4,5,6,7,8,9,10,11,12};
+
+    //Initialize memory
+    Memory memory = Memory();
     //**** END Define Architecture
 
     cout << "INITIAL VALUES:" << endl;
@@ -527,6 +535,8 @@ operaciones convert(const std::string& str)
     else if(str == "SubOp") return SubOp;
     else if(str == "MultOp") return MultOp;
     else if(str == "DivOp") return DivOp;
+    else if(str == "LdOp") return LdOp;
+    else if(str == "SdOp") return SdOp;
     else return AddOp;
 }
 //#######################################################################

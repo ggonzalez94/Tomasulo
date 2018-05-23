@@ -8,5 +8,4 @@ CFLAGS  = -std=c++11 -g -Wall
 
 
 all:
-	$(CC) $(CFLAGS) main.cpp Instruction.cpp RegisterStatus.cpp ReservationStation.cpp -o tomasulo
-
+	$(CC) $(CFLAGS) main.cpp Instruction.cpp RegisterStatus.cpp ReservationStation.cpp Memory.cpp -o tomasulo

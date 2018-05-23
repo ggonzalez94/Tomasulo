@@ -7,5 +7,7 @@ enum operaciones
     SubOp,
     MultOp,
     DivOp,
+    LdOp,
+    SdOp
 };
 #endif
