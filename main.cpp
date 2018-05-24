@@ -70,7 +70,8 @@ int ISSUE(vector<Instruction>& Inst,
 void EXECUTE(vector<Instruction>& Inst,
              vector<ReservationStation>& ResStat,
              vector<RegisterStatus>& RegStat,
-             vector<int>& Register);
+             vector<int>& Register,
+             Memory &memory);
 void WRITEBACK(vector<Instruction>& Inst,
                vector<ReservationStation>& ResStat,
                vector<RegisterStatus>& RegStat,
@@ -131,6 +132,12 @@ int main(int argc, char* argv[]){
             DIV1(DivOp, OperandInit),
             DIV2(DivOp, OperandInit),
             DIV3(DivOp, OperandInit);
+    ReservationStation
+            LD1(LdOp,OperandInit),
+            LD2(LdOp,OperandInit);
+    ReservationStation
+            SD1(SdOp,OperandInit),
+            SD2(SdOp,OperandInit);
     // Pack reservation stations into vector
     vector<ReservationStation> ResStation = {ADD1,
                                              ADD2,
@@ -140,7 +147,11 @@ int main(int argc, char* argv[]){
                                              MULT2,
                                              DIV1,
                                              DIV2,
-                                             DIV3};
+                                             DIV3,
+                                             LD1,
+                                             LD2,
+                                             SD1,
+                                             SD2 };
 
     // TODO: could make this a vector rather than a class object
     // Initialize register status objects
@@ -176,7 +187,7 @@ int main(int argc, char* argv[]){
         Clock++; // system clock
 
         ISSUE(Inst,ResStation,RegisterStatus,Register);
-		EXECUTE(Inst,ResStation,RegisterStatus,Register);
+		EXECUTE(Inst,ResStation,RegisterStatus,Register,memory);
 		WRITEBACK(Inst,ResStation,RegisterStatus,Register);
 
         // PRINT
@@ -224,6 +235,10 @@ int ISSUE(vector<Instruction>& INST,
     int RSMulEnd = Num_ADD_RS+Num_MULT_RS;
     int RSDivStart = Num_ADD_RS+Num_MULT_RS;
     int RSDivEnd = Num_ADD_RS+Num_MULT_RS+Num_DIV_RS;
+    int RSLdStart = Num_ADD_RS+Num_MULT_RS+Num_DIV_RS;
+    int RSLdEnd = Num_ADD_RS+Num_MULT_RS+Num_DIV_RS+Num_LD_RS;
+    int RSSdStart = Num_ADD_RS+Num_MULT_RS+Num_DIV_RS+Num_LD_RS;
+    int RSSdEnd = Num_ADD_RS+Num_MULT_RS+Num_DIV_RS+Num_LD_RS+Num_SD_RS;
     switch(r){
         case AddOp:
             for(int i=RSAddStart;i<RSAddEnd;i++){
@@ -280,6 +295,32 @@ int ISSUE(vector<Instruction>& INST,
             if(!rsFree)
                 return 1;
             break;
+        case LdOp:
+          for(int i=RSLdStart;i<RSLdEnd;i++){
+              if(!RESSTATION[i].is_busy()){
+                  r = i;
+                  currentInst_ISSUE++;
+                  RESSTATION[i].set_operation(LdOp);
+                  rsFree = true;
+                  break;
+              }
+          }
+          if(!rsFree)
+              return 1;
+          break;
+          case SdOp:
+            for(int i=RSSdStart;i<RSSdEnd;i++){
+                if(!RESSTATION[i].is_busy()){
+                    r = i;
+                    currentInst_ISSUE++;
+                    RESSTATION[i].set_operation(SdOp);
+                    rsFree = true;
+                    break;
+                }
+            }
+            if(!rsFree)
+                return 1;
+            break;
         default:
             break;
     }
@@ -297,11 +338,16 @@ int ISSUE(vector<Instruction>& INST,
     else{
         RESSTATION[r].set_estacion_Qj(REGSTATUS[INST[currentInst_ISSUE-1].get_rs_register()].get_estacion());
     }
+    //Si es un load entonces el valor del tercer operando es -1(solo hay dos operandos)
+    if(INST[currentInst_ISSUE-1].get_rt_register() == -1){
+      RESSTATION[r].set_Vk(0);
+      RESSTATION[r].set_estacion_Qk(OperandAvailable);
+    }
     // if operand rt is available -> set value of
     // operand (Vk) to given register value
     // else point operand to the reservation station
     // (Qk) that will give the operand value
-    if(REGSTATUS[INST[currentInst_ISSUE-1].get_rt_register()].get_estacion() == RegStatusEmpty){
+    else if(REGSTATUS[INST[currentInst_ISSUE-1].get_rt_register()].get_estacion() == RegStatusEmpty){
         RESSTATION[r].set_Vk(REG[INST[currentInst_ISSUE-1].get_rt_register()]);
         RESSTATION[r].set_estacion_Qk(OperandAvailable);
     }
@@ -325,7 +371,8 @@ int ISSUE(vector<Instruction>& INST,
 void EXECUTE(vector<Instruction>& INST,
              vector<ReservationStation>& RESSTATION,
              vector<RegisterStatus>& REGSTATUS,
-             vector<int>& REG){
+             vector<int>& REG,
+             Memory &memory){
     // check each reservation station to see
     // if both operands are ready
     // The current reservation station is r
@@ -364,6 +411,7 @@ void EXECUTE(vector<Instruction>& INST,
                                 // reset ISSUE latency for RS
                                 RESSTATION[r].set_issue_latency(0);
                             }
+                            break;
                         case(SubOp):
                             if(RESSTATION[r].get_lat() == ADD_Lat){
                                 RESSTATION[r].set_result(RESSTATION[r].get_Vj() - RESSTATION[r].get_Vk());
@@ -374,6 +422,7 @@ void EXECUTE(vector<Instruction>& INST,
                                 // reset ISSUE latency for RS
                                 RESSTATION[r].set_issue_latency(0);
                             }
+                            break;
                         case(MultOp):
                             if(RESSTATION[r].get_lat() == MULT_Lat){
                                 RESSTATION[r].set_result(RESSTATION[r].get_Vj() * RESSTATION[r].get_Vk());
@@ -384,6 +433,7 @@ void EXECUTE(vector<Instruction>& INST,
                                 // reset ISSUE latency for RS
                                 RESSTATION[r].set_issue_latency(0);
                             }
+                            break;
                         case(DivOp):
                             if(RESSTATION[r].get_lat() == DIV_Lat){
                                 RESSTATION[r].set_result(RESSTATION[r].get_Vj() / RESSTATION[r].get_Vk());
@@ -394,6 +444,18 @@ void EXECUTE(vector<Instruction>& INST,
                                 // reset ISSUE latency for RS
                                 RESSTATION[r].set_issue_latency(0);
                             }
+                            break;
+                        case(LdOp):
+                            if(RESSTATION[r].get_lat() == LD_Lat){
+                                RESSTATION[r].set_result(memory.read_memory(RESSTATION[r].get_Vj()));
+                                RESSTATION[r].set_result_ready(true);
+                                RESSTATION[r].set_lat(0);
+                                // Set clock cycle when execution ends
+                                INST[RESSTATION[r].get_instruction_number()].set_execute_clock_end(Clock);
+                                // reset ISSUE latency for RS
+                                RESSTATION[r].set_issue_latency(0);
+                            }
+                            break;
                         default:
                             break;
                     }

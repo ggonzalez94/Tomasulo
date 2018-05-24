@@ -12,10 +12,10 @@ Memory::Memory(){
 }
 
 int Memory::read_memory(int addr){
-  return memory[int(addr/4)];
+  return memory[int(addr)];
 }
 
 void Memory::write_memory(int addr,int value){
-  memory[int(addr/4)] = value;
+  memory[int(addr)] = value;
   return;
 }
