@@ -18,10 +18,11 @@ class Instruction {
         int executeClockBegin;
         int executeClockEnd;
         int writebackClock;
+        int inmediato;
     //**** Class methods
     public:
         Instruction();
-        Instruction(int,int,int,operaciones);
+        Instruction(int,int,int,int,operaciones);
         int get_operation();
         void set_operation(operaciones);
         int get_issue_clock();
@@ -35,6 +36,8 @@ class Instruction {
         int get_destination_register();
         int get_rs_register();
         int get_rt_register();
+        int get_inmediato();
+        void set_inmediato(int);
 };
 
 #endif //TOMASULO_INSTRUCTION_H

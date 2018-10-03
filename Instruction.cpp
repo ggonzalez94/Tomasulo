@@ -15,7 +15,7 @@ Instruction::Instruction() {
     writebackClock = 0;
 }
 
-Instruction::Instruction(int RD,int RS, int RT, operaciones OP) {
+Instruction::Instruction(int RD,int RS, int RT,int inmediato, operaciones OP) {
     rd = RD;
     rs = RS;
     rt = RT;
@@ -58,6 +58,10 @@ int Instruction::get_rt_register(){
   return rt;
 }
 
+int Instruction::get_inmediato(){
+  return inmediato;
+}
+
 void Instruction::set_operation(operaciones op){
   this->op = op;
 }
@@ -76,4 +80,8 @@ void Instruction::set_execute_clock_begin(int executeClockBegin){
 
 void Instruction::set_execute_clock_end(int executeClockEnd){
   this->executeClockEnd= executeClockEnd;
+}
+
+void Instruction::set_inmediato(int inmediato){
+  this->inmediato= inmediato;
 }

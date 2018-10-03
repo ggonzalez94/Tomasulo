@@ -20,6 +20,8 @@
 #include <iomanip>          // Print Table Formatting
 #include <vector>
 #include <fstream>
+#include <sstream>
+#include "pystring.h"
 #include "ReservationStation.h"
 #include "Instruction.h"    // MIPS Style Instruction Class
 #include "RegisterStatus.h"
@@ -103,16 +105,37 @@ int main(int argc, char* argv[]){
       cout<<"Nombre del archivo de instrucciones no valido \n";
       exit(1);
     }
-    int reg_dest;
-    int reg_first_source;
-    int reg_second_source;
-    string operation;
-    int i = 0;
-    while(fp >> reg_dest >> reg_first_source >> reg_second_source >> operation){
-      Instruction instruccion(reg_dest,reg_first_source,reg_second_source,convert(operation));
-      Inst.push_back(instruccion);
-      cout<<Inst[i].get_destination_register()<<"\n";
-      i++;
+
+    string line;
+    while (getline(fp, line))
+    {
+    istringstream iss(line);
+    string op;
+    string operando_tipo_i; //Segundo operando a convertir en un LW o SW
+    int reg_dest = 999;
+    int reg_first_source = 999;
+    int reg_second_source = 999;
+    int inmediato = 0;
+    iss >> op;
+    if (op == "AddOp" || op == "SubOp" || op == "MultOp" || op == "DivOp"){
+        iss>>reg_dest>>reg_first_source>>reg_second_source;
+    }
+    else if (op == "LdOp" || op == "SdOp"){
+        iss>>reg_second_source>>operando_tipo_i;
+        string token1 = operando_tipo_i.substr(0,operando_tipo_i.find("("));
+        string token2 = operando_tipo_i.substr(operando_tipo_i.find("(")+1);
+        token2 = token2.substr(0, token2.length() - 1);
+        inmediato = stoi(token1);
+        reg_first_source = stoi(token2);
+    }
+    else{
+        cout << "Operacion no reconocida" << '\n';
+        return 1;
+    }
+
+    Instruction instruccion(reg_dest,reg_first_source,reg_second_source,inmediato,convert(op));
+    Inst.push_back(instruccion);
+
     }
     //// Input reservation station architecture
     // DONT FORGET TO UPDATE ^

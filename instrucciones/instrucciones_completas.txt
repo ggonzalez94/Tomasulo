@@ -5,3 +5,5 @@ MultOp 9 4 10
 DivOp 11 12 6 
 MultOp 8 1 5 
 MultOp 7 2 3
+LdOp 2 10(3)
+SdOp 3 10(1) 
