@@ -1,9 +1,11 @@
+SdOp 1 2(1)
+LdOp 2 2(1)
 AddOp 1 2 3 
 AddOp 4 1 5
-SubOp 6 7 8 
+SubOp 6 7 8
+LdOp  6 1(3) 
 MultOp 9 4 10 
 DivOp 11 12 6 
 MultOp 8 1 5 
 MultOp 7 2 3
 LdOp 2 10(3)
-SdOp 3 10(1) 

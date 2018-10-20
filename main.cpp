@@ -112,9 +112,9 @@ int main(int argc, char* argv[]){
     istringstream iss(line);
     string op;
     string operando_tipo_i; //Segundo operando a convertir en un LW o SW
-    int reg_dest = 999;
-    int reg_first_source = 999;
-    int reg_second_source = 999;
+    int reg_dest = -1;
+    int reg_first_source = -1;
+    int reg_second_source = -1;
     int inmediato = 0;
     iss >> op;
     if (op == "AddOp" || op == "SubOp" || op == "MultOp" || op == "DivOp"){
@@ -225,7 +225,10 @@ int main(int argc, char* argv[]){
             Done = true;
         cout << endl;
 	}while(!Done);//**** End functional loop
-
+  for (int i=0;i<64;i++)
+  {
+    cout<<memory.read_memory(i)<<"\n";
+  }
     return 0;
 }//**** END MAIN DRIVER
 //#######################################################################
@@ -361,10 +364,11 @@ int ISSUE(vector<Instruction>& INST,
     else{
         RESSTATION[r].set_estacion_Qj(REGSTATUS[INST[currentInst_ISSUE-1].get_rs_register()].get_estacion());
     }
-    //Si es un load entonces el valor del tercer operando es -1(solo hay dos operandos)
-    if(INST[currentInst_ISSUE-1].get_rt_register() == -1){
-      RESSTATION[r].set_Vk(0);
+    //Si es un load o store entonces el valor de rd es -1(solo hay dos operandos)
+    if(INST[currentInst_ISSUE-1].get_destination_register() == -1){
+      RESSTATION[r].set_Vk(REG[INST[currentInst_ISSUE-1].get_rt_register()]);
       RESSTATION[r].set_estacion_Qk(OperandAvailable);
+      RESSTATION[r].set_inmediato(INST[currentInst_ISSUE-1].get_inmediato());
     }
     // if operand rt is available -> set value of
     // operand (Vk) to given register value
@@ -388,7 +392,18 @@ int ISSUE(vector<Instruction>& INST,
     INST[currentInst_ISSUE-1].set_issue_clock(Clock);
     // The register status Qi is set to the current
     // instructions reservation station location r
-    REGSTATUS[INST[currentInst_ISSUE-1].get_destination_register()].set_estacion(r);
+    //ES un load entonces el reg destino esta en rt
+    if(INST[currentInst_ISSUE-1].get_operation() == LdOp){
+      REGSTATUS[INST[currentInst_ISSUE-1].get_rt_register()].set_estacion(r);
+    }
+    //Store
+    else if(INST[currentInst_ISSUE-1].get_operation() == SdOp){
+
+    }
+    //Si es tipo R el reg destino es rd
+    else{
+      REGSTATUS[INST[currentInst_ISSUE-1].get_destination_register()].set_estacion(r);
+    }
     return 2;
 }//END ISSUE()
 void EXECUTE(vector<Instruction>& INST,
@@ -470,7 +485,18 @@ void EXECUTE(vector<Instruction>& INST,
                             break;
                         case(LdOp):
                             if(RESSTATION[r].get_lat() == LD_Lat){
-                                RESSTATION[r].set_result(memory.read_memory(RESSTATION[r].get_Vj()));
+                                RESSTATION[r].set_result(memory.read_memory(RESSTATION[r].get_Vj() + RESSTATION[r].get_inmediato()));
+                                RESSTATION[r].set_result_ready(true);
+                                RESSTATION[r].set_lat(0);
+                                // Set clock cycle when execution ends
+                                INST[RESSTATION[r].get_instruction_number()].set_execute_clock_end(Clock);
+                                // reset ISSUE latency for RS
+                                RESSTATION[r].set_issue_latency(0);
+                            }
+                        case(SdOp):
+                            cout<< "Ejecutando store \n" <<RESSTATION[r].get_Vj() <<"\n"<<RESSTATION[r].get_Vk()<<"\n" ;
+                            if(RESSTATION[r].get_lat() == SD_Lat){
+                                memory.write_memory(RESSTATION[r].get_Vj()+RESSTATION[r].get_inmediato(),RESSTATION[r].get_Vk());
                                 RESSTATION[r].set_result_ready(true);
                                 RESSTATION[r].set_lat(0);
                                 // Set clock cycle when execution ends

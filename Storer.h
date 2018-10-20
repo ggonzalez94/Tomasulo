@@ -1,22 +1,15 @@
-//
-// Created by aj on 3/8/16.
-//
-
-#ifndef TOMASULO_RS_H
-#define TOMASULO_RS_H
+#ifndef TOMASULO_STORER_H
+#define TOMASULO_STORER_H
 
 #include "operaciones.h"
 
-class ReservationStation {
+class Storer {
     private:
         bool busy;
-        int Qj; //estaciones de donde va a provenir el valor(0 si esta disponible)
-        int Qk;
-        int Vj; //Valores de los operandos
-        int Vk;
+        int dir;
+        int Qi;
+        int Vi;
         int lat;
-        int inmediato; //Inmediato para las operaciones de memoria
-        operaciones op;
         int result;
         bool resultReady;
         int instNum;
@@ -25,27 +18,20 @@ class ReservationStation {
 
     //**** Methods
     public:
-        ReservationStation();
-        ReservationStation(operaciones, int);
+        Storer();
         bool is_busy();
         void set_busy();
         void set_free();
-        int get_estacion_Qj();
-        int get_estacion_Qk();
-        void set_estacion_Qj(int);
-        void set_estacion_Qk(int);
-        int get_Vj();
-        int get_Vk();
-        void set_Vj(int);
-        void set_Vk(int);
+        int get_dir();
+        int get_Qi();
+        int get_Vi();
+        void set_dir(int);
+        void set_Qi(int);
+        void set_Vi(int);
         int get_lat();
         void set_lat(int);
-        operaciones get_operation();
-        void set_operation(operaciones);
         int get_result();
         void set_result(int);
-        int get_inmediato();
-        void set_inmediato(int);
         bool is_result_ready();
         void set_result_ready(bool);
         int get_instruction_number();

@@ -98,6 +98,14 @@ int ReservationStation::get_result(){
   return result;
 }
 
+void ReservationStation::set_inmediato(int inmediato){
+  this->inmediato = inmediato;
+}
+
+int ReservationStation::get_inmediato(){
+  return inmediato;
+}
+
 void ReservationStation::set_result(int resultado){
   result = resultado;
 }
