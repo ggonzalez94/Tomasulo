@@ -1,0 +1,5 @@
+MultOp 0 2 4
+AddOp 6 0 8
+SdOp 6 0(1)
+SubOp 8 10 12
+MultOp 6 10 8

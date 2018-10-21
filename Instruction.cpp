@@ -19,6 +19,7 @@ Instruction::Instruction(int RD,int RS, int RT,int inmediato, operaciones OP) {
     rd = RD;
     rs = RS;
     rt = RT;
+    this->inmediato = inmediato;
     op = OP;
     issueClock = 0;
     executeClockBegin = 0;

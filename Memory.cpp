@@ -7,7 +7,7 @@
 Memory::Memory(){
   memory_size = 64;
   for (int i=0;i<memory_size;i++){
-    memory.push_back(99);
+    memory.push_back(0);
   }
 }
 

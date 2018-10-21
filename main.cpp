@@ -191,17 +191,17 @@ int main(int argc, char* argv[]){
             {F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12};
 
     // Initialize register file vector
-    vector<int> Register = {ZERO_REG,1,2,3,4,5,6,7,8,9,10,11,12};
+    vector<int> Register = {0,1,2,3,4,5,6,7,8,9,10,11,12};
 
     //Initialize memory
     Memory memory = Memory();
     //**** END Define Architecture
 
-    cout << "INITIAL VALUES:" << endl;
-    printInstructions(Inst);
-    printReservationStations(ResStation);
-    printRegisters(Register);
-    printRegisterStatus(RegisterStatus);
+    cout << "Valores iniciales:" << endl;
+    // printInstructions(Inst);
+    // printReservationStations(ResStation);
+    //printRegisters(Register);
+    // printRegisterStatus(RegisterStatus);
     cout << endl;
 
     //**** START functional loop
@@ -209,6 +209,10 @@ int main(int argc, char* argv[]){
         // Datapath
         Clock++; // system clock
 
+        // for(int i = 0;i<4;i++){
+        //   cout<<"Inmediato de la instruccion: "<<Inst[i].get_inmediato()<<"\n";
+        // }
+        // return 1;
         ISSUE(Inst,ResStation,RegisterStatus,Register);
 		EXECUTE(Inst,ResStation,RegisterStatus,Register,memory);
 		WRITEBACK(Inst,ResStation,RegisterStatus,Register);
@@ -225,10 +229,15 @@ int main(int argc, char* argv[]){
             Done = true;
         cout << endl;
 	}while(!Done);//**** End functional loop
+  //Imprimir contenido de la memoria
+  cout<<"Memoria: "<<"\n";
   for (int i=0;i<64;i++)
   {
-    cout<<memory.read_memory(i)<<"\n";
+    cout<<memory.read_memory(i)<<"  ";
+    if((i+1) % 8 == 0)
+        cout<<"\n";
   }
+    cout<<"\n";
     return 0;
 }//**** END MAIN DRIVER
 //#######################################################################
@@ -366,9 +375,15 @@ int ISSUE(vector<Instruction>& INST,
     }
     //Si es un load o store entonces el valor de rd es -1(solo hay dos operandos)
     if(INST[currentInst_ISSUE-1].get_destination_register() == -1){
-      RESSTATION[r].set_Vk(REG[INST[currentInst_ISSUE-1].get_rt_register()]);
-      RESSTATION[r].set_estacion_Qk(OperandAvailable);
-      RESSTATION[r].set_inmediato(INST[currentInst_ISSUE-1].get_inmediato());
+      if(REGSTATUS[INST[currentInst_ISSUE-1].get_rt_register()].get_estacion() == RegStatusEmpty){ //Registro rt disponible
+        RESSTATION[r].set_Vk(REG[INST[currentInst_ISSUE-1].get_rt_register()]);
+        RESSTATION[r].set_estacion_Qk(OperandAvailable);
+        RESSTATION[r].set_inmediato(INST[currentInst_ISSUE-1].get_inmediato());
+      }
+      else { //Apuntar a la estacion que producira el resultado
+        RESSTATION[r].set_estacion_Qk(REGSTATUS[INST[currentInst_ISSUE-1].get_rt_register()].get_estacion());
+        RESSTATION[r].set_inmediato(INST[currentInst_ISSUE-1].get_inmediato());
+      }
     }
     // if operand rt is available -> set value of
     // operand (Vk) to given register value
@@ -494,7 +509,6 @@ void EXECUTE(vector<Instruction>& INST,
                                 RESSTATION[r].set_issue_latency(0);
                             }
                         case(SdOp):
-                            cout<< "Ejecutando store \n" <<RESSTATION[r].get_Vj() <<"\n"<<RESSTATION[r].get_Vk()<<"\n" ;
                             if(RESSTATION[r].get_lat() == SD_Lat){
                                 memory.write_memory(RESSTATION[r].get_Vj()+RESSTATION[r].get_inmediato(),RESSTATION[r].get_Vk());
                                 RESSTATION[r].set_result_ready(true);
@@ -599,7 +613,7 @@ void printReservationStations(vector<ReservationStation> RSV){
                 RSV[i].get_estacion_Qk() << endl;
 }
 void printRegisters(vector<int> RegistersVector){
-    cout << "Register Content:" << endl;
+    cout << "Registros:" << endl;
     for(int i=0; i<RegistersVector.size(); i++)
         cout << RegistersVector[i] << ' ';
     cout << endl;
