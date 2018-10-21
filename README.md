@@ -1,6 +1,6 @@
-#Arquitectura de Computadoras : Algoritmo de Tomasulo
+# Arquitectura de Computadoras : Algoritmo de Tomasulo
 
-##Instrucciones para instalar el programa
+## Instrucciones para instalar el programa
 1. Descargar el repositorio
 2. Navegar a la carpeta donde se encuentra el Makefile
 3. Ejecutar el comando make all
