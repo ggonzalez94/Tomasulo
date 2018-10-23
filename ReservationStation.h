@@ -1,6 +1,4 @@
 //
-// Created by aj on 3/8/16.
-//
 
 #ifndef TOMASULO_RS_H
 #define TOMASULO_RS_H

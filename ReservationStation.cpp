@@ -1,6 +1,4 @@
 //
-// Created by aj on 3/8/16.
-//
 
 #include "ReservationStation.h"
 
